@@ -26,6 +26,7 @@ uv run mypy                                      # tipos (strict)
 uv run pytest                                    # todos os testes
 uv run pytest -m "not integration and not api"   # ciclo rápido
 uv run streamlit run ui/simple/app.py            # a interface simples
+uv run python -m ml_lab.api                      # a API (documentação em /docs)
 ```
 
 Os avisos contam como erros nos testes: resolve-os em vez de os silenciar.
@@ -34,15 +35,18 @@ Os avisos contam como erros nos testes: resolve-os em vez de os silenciar.
 
 - `core/` nunca importa `api/` nem `ui/`; `core/foundation/` não importa nada do projeto;
   o pandas só existe em `core/data/`.
-- A interface só importa `ml_lab.core.services` e `ml_lab.core.schemas` (e `config`,
-  `logging`, `formatting`).
-- Os componentes registam-se (`MODELS`, `METRICS`, `EVALUATORS`, `GENERATORS`…). Um
-  algoritmo novo é um ficheiro novo mais a sua ficha, e os testes de contrato testam-no
-  sozinho. Ver "Manutenção: como adicionar componentes" em `docs/architecture.md`.
+- A interface e a API só importam `ml_lab.core.services` e `ml_lab.core.schemas` (e
+  `config`, `logging`, `formatting`, `process`).
+- Os componentes registam-se (`MODELS`, `METRICS`, `EVALUATORS`, `GENERATORS`, `AGENTS`,
+  `ENVIRONMENTS`…). Um algoritmo novo é um ficheiro novo mais a sua ficha, e os testes de
+  contrato testam-no sozinho. Ver "Manutenção: como adicionar componentes" em
+  `docs/architecture.md`.
+- O PyTorch só existe nas redes (`core/models/neural/`, `torch_adapter.py` e o DQN em
+  `core/rl/agents/dqn.py`); o SQLite e o joblib só em `core/tracking/`.
 
 ## O backend tem de ficar pronto para o frontend
 
-A interface simples (Streamlit) é provisória. Na fase 9 é refeita em React, que fala com
+A interface simples (Streamlit) é provisória. Na fase 10 é refeita em React, que fala com
 o núcleo através de uma API HTTP (fase 7, FastAPI). **Todo o código do backend escreve-se
 a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
 
@@ -68,11 +72,15 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    vez. Os textos novos vão para o backend. As legendas de gráficos que ainda estão nas
    páginas do Streamlit mudam-se quando os ecrãs forem refeitos.
 6. **O trabalho longo corre em segundo plano**, com um estado serializável
-   (`TrainingJob.state()` devolve um `JobState`). É o que a API devolve a quem pergunta
-   pelo progresso.
+   (`TrainingJob.state()` devolve um `JobState`). O serviço que o lança guarda-o num
+   `JobRegistry` e expõe `job`, `pause`, `resume`, `cancel`, `updates` e `result` pelo id
+   do run: é isso que a API devolve a quem acompanha o treino (ADR 0022).
 7. **Identificadores estáveis, em texto:** o id do dataset, o id do run, o nome do
    modelo no registo, o código de cada aviso. É com eles que o frontend volta a pedir as
    coisas.
 8. **Os erros são subclasses de `MLLabError`**, com uma mensagem em português que diz o
-   que fazer. A API (fase 7) vai traduzir o tipo num código HTTP (`LookupError` → 404,
-   `ValueError` e `DataError` → 422), por isso escolhe a subclasse certa.
+   que fazer. A API traduz a categoria num código HTTP, por isso escolhe a subclasse certa:
+   `TrainingStateError` → 409, `DataError` e `ValueError` → 422, `LookupError` → 404,
+   `TrackingError` → 500, outro `MLLabError` → 400 (`api/errors.py`).
+9. **Cada método público de um serviço tem a sua rota** em `api/routes/<serviço>.py`, com
+   o nome do método (`tests/api/test_contract.py` falha enquanto faltar).

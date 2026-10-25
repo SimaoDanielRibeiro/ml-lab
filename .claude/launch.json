@@ -15,6 +15,12 @@
         "8501"
       ],
       "port": 8501
+    },
+    {
+      "name": "ml-lab-api",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "python", "-m", "ml_lab.api"],
+      "port": 8000
     }
   ]
 }

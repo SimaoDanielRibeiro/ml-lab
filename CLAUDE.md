@@ -27,6 +27,7 @@ uv run pytest                                    # todos os testes
 uv run pytest -m "not integration and not api"   # ciclo rápido
 uv run streamlit run ui/simple/app.py            # a interface simples
 uv run python -m ml_lab.api                      # a API (documentação em /docs)
+uv run python scripts/export_openapi.py          # o contrato do frontend (ui/web/openapi.json)
 ```
 
 Os avisos contam como erros nos testes: resolve-os em vez de os silenciar.
@@ -59,18 +60,21 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    com o que é preciso para os mostrar (por exemplo, `as_percent`).
 3. **Tudo passa a JSON.** `tests/contract/test_service_boundary.py` exige que cada
    método público devolva um tipo que o Pydantic sabe descrever, e resultados reais que
-   passam a JSON estrito. Para serializar, usa `ml_lab.core.schemas.serialization.to_json`
-   (os NaN passam a `null`). Um método que só serve outros serviços (devolve DataFrames
-   ou o modelo) leva `@internal`.
+   passam a JSON estrito e voltam a validar contra o próprio tipo. Para serializar, usa
+   `ml_lab.core.schemas.serialization.to_json` (os NaN passam a `null`). Um método que só
+   serve outros serviços (devolve DataFrames ou o modelo) leva `@internal`. As propriedades
+   (`@property`) não vão no JSON: o que o frontend precisa de saber fica num campo.
 4. **As regras de domínio ficam no backend.** A interface não decide nada que o frontend
    também teria de decidir: que divisões existem para uma tarefa, o que significa o estado
    de um modelo, qual é a classe anómala. Pede-o a um serviço (por exemplo
    `DatasetService.task_options` ou `ExperimentResult.learned`). A interface decide só a
    apresentação: a disposição, os separadores e as cores.
 5. **Os textos didáticos vêm do backend:** fichas, explicações das métricas, temas do
-   painel "Porquê?" e avisos (`Notice`, com um código estável). Assim só se escrevem uma
-   vez. Os textos novos vão para o backend. As legendas de gráficos que ainda estão nas
-   páginas do Streamlit mudam-se quando os ecrãs forem refeitos.
+   painel "Porquê?", avisos (`Notice`, com um código estável) e o nome a mostrar de cada
+   valor (o `label` de cada enum, que o frontend recebe no vocabulário, `GET /vocabulary`;
+   `tests/contract/test_vocabulary.py` falha se um enum devolvido não tiver nome). Assim só
+   se escrevem uma vez. Os textos novos vão para o backend. As legendas de gráficos que
+   ainda estão nas páginas do Streamlit mudam-se quando os ecrãs forem refeitos.
 6. **O trabalho longo corre em segundo plano**, com um estado serializável
    (`TrainingJob.state()` devolve um `JobState`). O serviço que o lança guarda-o num
    `JobRegistry` e expõe `job`, `pause`, `resume`, `cancel`, `updates` e `result` pelo id
@@ -84,3 +88,7 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    `TrackingError` → 500, outro `MLLabError` → 400 (`api/errors.py`).
 9. **Cada método público de um serviço tem a sua rota** em `api/routes/<serviço>.py`, com
    o nome do método (`tests/api/test_contract.py` falha enquanto faltar).
+10. **O contrato fica guardado** em `ui/web/openapi.json`: depois de mudar um serviço, uma
+   rota ou um tipo devolvido, volta a gerá-lo (`scripts/export_openapi.py`;
+   `tests/api/test_openapi_file.py` avisa). O guia do contrato está em `ui/web/README.md`
+   (ADR 0026).

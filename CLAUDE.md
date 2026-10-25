@@ -30,6 +30,15 @@ uv run python -m ml_lab.api                      # a API (documentação em /doc
 uv run python scripts/export_openapi.py          # o contrato do frontend (ui/web/openapi.json)
 ```
 
+A interface web (fase 10), dentro de `ui/web`, com a API a correr:
+
+```bash
+npm install                                      # instalar
+npm run dev                                      # a interface (http://localhost:5173)
+npm run lint && npm run typecheck && npm test    # verificar (o cliente gera-se sozinho)
+npm run e2e                                      # ponta a ponta (API numa pasta temporária)
+```
+
 Os avisos contam como erros nos testes: resolve-os em vez de os silenciar.
 
 ## Arquitetura (as regras têm testes em `tests/architecture/`)
@@ -69,8 +78,9 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    de um modelo, qual é a classe anómala. Pede-o a um serviço (por exemplo
    `DatasetService.task_options` ou `ExperimentResult.learned`). A interface decide só a
    apresentação: a disposição, os separadores e as cores.
-5. **Os textos didáticos vêm do backend:** fichas, explicações das métricas, temas do
-   painel "Porquê?", avisos (`Notice`, com um código estável) e o nome a mostrar de cada
+5. **Os textos didáticos vêm do backend:** fichas, explicações das métricas (com a fórmula e
+   os termos dela num run), temas do painel "Porquê?", avisos (`Notice`, com um código
+   estável) e o nome a mostrar de cada
    valor (o `label` de cada enum, que o frontend recebe no vocabulário, `GET /vocabulary`;
    `tests/contract/test_vocabulary.py` falha se um enum devolvido não tiver nome). Assim só
    se escrevem uma vez. Os textos novos vão para o backend. As legendas de gráficos que

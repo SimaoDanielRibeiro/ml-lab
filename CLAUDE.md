@@ -83,8 +83,9 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    estável) e o nome a mostrar de cada
    valor (o `label` de cada enum, que o frontend recebe no vocabulário, `GET /vocabulary`;
    `tests/contract/test_vocabulary.py` falha se um enum devolvido não tiver nome). Assim só
-   se escrevem uma vez. Os textos novos vão para o backend. As legendas de gráficos que
-   ainda estão nas páginas do Streamlit mudam-se quando os ecrãs forem refeitos.
+   se escrevem uma vez. Os textos novos vão para o backend. O "como se lê" de cada gráfico
+   também é um tema, sem as cores de nenhuma interface, e as interfaces pedem-no pelo nome
+   escrito por inteiro (`tests/contract/test_topics_in_use.py` falha se não existir; ADR 0030).
 6. **O trabalho longo corre em segundo plano**, com um estado serializável
    (`TrainingJob.state()` devolve um `JobState`). O serviço que o lança guarda-o num
    `JobRegistry` e expõe `job`, `pause`, `resume`, `cancel`, `updates` e `result` pelo id

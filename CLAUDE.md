@@ -25,12 +25,13 @@ uv run ruff check .                              # lint
 uv run mypy                                      # tipos (strict)
 uv run pytest                                    # todos os testes
 uv run pytest -m "not integration and not api"   # ciclo rápido
-uv run streamlit run ui/simple/app.py            # a interface simples
-uv run python -m ml_lab.api                      # a API (documentação em /docs)
+uv run python scripts/dev.py                     # a API e a interface juntas
+uv run python -m ml_lab.api                      # só a API (documentação em /docs)
 uv run python scripts/export_openapi.py          # o contrato do frontend (ui/web/openapi.json)
 ```
 
-A interface web (fase 10), dentro de `ui/web`, com a API a correr:
+A interface é a web (fase 10, em `ui/web`); a simples, em Streamlit, saiu (ADR 0031). Dentro
+de `ui/web`, com a API a correr:
 
 ```bash
 npm install                                      # instalar
@@ -43,10 +44,10 @@ Os avisos contam como erros nos testes: resolve-os em vez de os silenciar.
 
 ## Arquitetura (as regras têm testes em `tests/architecture/`)
 
-- `core/` nunca importa `api/` nem `ui/`; `core/foundation/` não importa nada do projeto;
-  o pandas só existe em `core/data/`.
-- A interface e a API só importam `ml_lab.core.services` e `ml_lab.core.schemas` (e
-  `config`, `logging`, `formatting`, `process`).
+- `core/` nunca importa `api/` nem bibliotecas de interface ou de gráficos;
+  `core/foundation/` não importa nada do projeto; o pandas só existe em `core/data/`.
+- A API só importa `ml_lab.core.services` e `ml_lab.core.schemas` (e `config`, `logging`,
+  `formatting`, `process`); a interface web só fala com a API, por HTTP e WebSocket.
 - Os componentes registam-se (`MODELS`, `METRICS`, `EVALUATORS`, `GENERATORS`, `AGENTS`,
   `ENVIRONMENTS`…). Um algoritmo novo é um ficheiro novo mais a sua ficha, e os testes de
   contrato testam-no sozinho. Ver "Manutenção: como adicionar componentes" em
@@ -56,9 +57,10 @@ Os avisos contam como erros nos testes: resolve-os em vez de os silenciar.
 
 ## O backend tem de ficar pronto para o frontend
 
-A interface simples (Streamlit) é provisória. Na fase 10 é refeita em React, que fala com
-o núcleo através de uma API HTTP (fase 7, FastAPI). **Todo o código do backend escreve-se
-a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
+A interface é a web, em React (fase 10), que fala com o núcleo só através da API HTTP
+(fase 7, FastAPI); a simples, em Streamlit, saiu quando a web ficou com tudo (ADR 0031).
+**Todo o código do backend escreve-se a pensar nisso**, para que a interface só tenha de
+desenhar (ADR 0019):
 
 1. **Os serviços são a única porta.** Tudo o que um ecrã precisa existe como método
    público de um serviço em `core/services/`. Se a interface precisa de algo novo, cria-se
@@ -73,9 +75,9 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    `ml_lab.core.schemas.serialization.to_json` (os NaN passam a `null`). Um método que só
    serve outros serviços (devolve DataFrames ou o modelo) leva `@internal`. As propriedades
    (`@property`) não vão no JSON: o que o frontend precisa de saber fica num campo.
-4. **As regras de domínio ficam no backend.** A interface não decide nada que o frontend
-   também teria de decidir: que divisões existem para uma tarefa, o que significa o estado
-   de um modelo, qual é a classe anómala. Pede-o a um serviço (por exemplo
+4. **As regras de domínio ficam no backend.** A interface não decide nada que seja do
+   domínio: que divisões existem para uma tarefa, o que significa o estado de um modelo,
+   qual é a classe anómala. Pede-o a um serviço (por exemplo
    `DatasetService.task_options` ou `ExperimentResult.learned`). A interface decide só a
    apresentação: a disposição, os separadores e as cores.
 5. **Os textos didáticos vêm do backend:** fichas, explicações das métricas (com a fórmula e
@@ -84,7 +86,7 @@ a pensar nisso**, para que a interface nova só tenha de desenhar (ADR 0019):
    valor (o `label` de cada enum, que o frontend recebe no vocabulário, `GET /vocabulary`;
    `tests/contract/test_vocabulary.py` falha se um enum devolvido não tiver nome). Assim só
    se escrevem uma vez. Os textos novos vão para o backend. O "como se lê" de cada gráfico
-   também é um tema, sem as cores de nenhuma interface, e as interfaces pedem-no pelo nome
+   também é um tema, sem cores (as cores são da interface), e a interface pede-o pelo nome
    escrito por inteiro (`tests/contract/test_topics_in_use.py` falha se não existir; ADR 0030).
 6. **O trabalho longo corre em segundo plano**, com um estado serializável
    (`TrainingJob.state()` devolve um `JobState`). O serviço que o lança guarda-o num

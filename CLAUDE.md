@@ -1,12 +1,18 @@
-# ML Lab — instruções para o Claude
+# Orbyte (ML Lab) — instruções para o Claude
 
-Laboratório de machine learning feito para aprender, fase a fase. O plano completo está em
-`docs/architecture.md`; as decisões e as suas razões, em `docs/adr/`.
+Laboratório de machine learning feito para aprender, fase a fase. Chama-se Orbyte (antes ML Lab;
+o pacote Python continua `ml_lab`, ADR 0043). O plano completo está em `docs/architecture.md`;
+as decisões e as suas razões, em `docs/adr/`.
 
 ## Como trabalhar
 
-- Escreve em português de Portugal (respostas, documentação, docstrings, mensagens); os
-  nomes no código ficam em inglês. Docstrings no estilo Google.
+- Escreve em português de Portugal (respostas, documentação, ADRs, docstrings, comentários,
+  registos e mensagens de commit); os nomes no código ficam em inglês. Docstrings no estilo
+  Google.
+- **O site está todo em inglês** (ADR 0043): tudo o que a interface mostra, venha dela ou do
+  backend — nomes a mostrar (`label`), avisos, erros, temas, explicações, a conversa dos agentes,
+  a história do treino, as fichas de `docs/algorithms/` e os números do `formatting.py`. Os
+  identificadores não se traduzem (ids, códigos dos avisos, os mapas `simples`/`penhasco`).
 - O projeto é para aprender: explica o porquê das escolhas, não só o quê.
 - Trabalha fase a fase, pelo roadmap de `docs/architecture.md`. Uma fase só termina
   quando o critério "Pronto quando" se cumpre, `ruff`, `mypy` e `pytest` passam e as
@@ -36,7 +42,7 @@ de `ui/web`, com a API a correr:
 ```bash
 npm install                                      # instalar
 npm run dev                                      # a interface (http://localhost:5173)
-npm run lint && npm run typecheck && npm test    # verificar (o cliente gera-se sozinho)
+npm run check                                    # verificar: gera o cliente, lint, tipos e testes
 npm run e2e                                      # ponta a ponta (API numa pasta temporária)
 ```
 
